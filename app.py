@@ -3,8 +3,9 @@
 import os
 
 import streamlit as st
+from chromadb.errors import NotFoundError
 
-from rag import DEFAULT_TOP_K, answer_question, load_embedder, open_collection
+from rag import COLLECTION, DEFAULT_TOP_K, answer_question, load_embedder, open_client
 
 st.set_page_config(page_title="Ask Your PDFs")
 st.title("Ask Your PDFs")
@@ -15,9 +16,16 @@ def get_embedder():
     return load_embedder()
 
 
+@st.cache_resource(show_spinner=False)
+def get_client():
+    # Share one client: Chroma fails when several Streamlit threads create clients at once.
+    return open_client()
+
+
 try:
-    collection = open_collection()
-except Exception:
+    # Looked up on every run so the app picks up a new index after re-ingesting.
+    collection = get_client().get_collection(COLLECTION)
+except NotFoundError:
     st.error("No index found. Run `python ingest.py` first, then reload this page.")
     st.stop()
 

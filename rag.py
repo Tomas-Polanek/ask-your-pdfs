@@ -113,7 +113,7 @@ def load_embedder() -> SentenceTransformer:
 
 def build_index(chunks: list[Chunk], embedder: SentenceTransformer) -> None:
     """Replace the vector collection with the given chunks."""
-    client = chromadb.PersistentClient(path=str(DB_DIR))
+    client = open_client()
     if COLLECTION in [c.name for c in client.list_collections()]:
         client.delete_collection(COLLECTION)
     collection = client.create_collection(COLLECTION, metadata={"hnsw:space": "cosine"})
@@ -136,9 +136,8 @@ def build_index(chunks: list[Chunk], embedder: SentenceTransformer) -> None:
 # --- Retrieval ---------------------------------------------------------------------------
 
 
-def open_collection():
-    """Open the collection created by ingest.py; raises if it does not exist yet."""
-    return chromadb.PersistentClient(path=str(DB_DIR)).get_collection(COLLECTION)
+def open_client():
+    return chromadb.PersistentClient(path=str(DB_DIR))
 
 
 def retrieve(
